@@ -1,0 +1,5 @@
+[core]
+    remote = mys3remote
+['remote "mys3remote"']
+    url = s3://mlops-sla-mahipune01/dvcstore
+    region = ap-south-1
