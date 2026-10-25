@@ -1,0 +1,31 @@
+# Python
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+.ruff_cache/
+
+# Environment & Secrets
+.env
+*.pem
+kaggle.json
+
+# Data & ML Artifacts (managed by DVC)
+data/processed/*
+!data/processed/.gitkeep
+models/*
+!models/.gitkeep
+mlruns/
+metrics.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store

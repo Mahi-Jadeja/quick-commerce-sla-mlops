@@ -1,0 +1,5 @@
+# Ignore git and temp files in DVC
+.git
+.gitignore
+venv/
+__pycache__/
