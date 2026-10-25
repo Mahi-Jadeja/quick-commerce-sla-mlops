@@ -1,165 +1,107 @@
-import json
+import os
 import requests
 import pandas as pd
 import streamlit as st
-from pathlib import Path
 
-# Page Config
 st.set_page_config(
-    page_title="Quick-Commerce SLA Risk Operations Console",
+    page_title="Quick-Commerce SLA Risk Operations",
     page_icon="⚡",
-    layout="wide",
+    layout="wide"
 )
 
-# Custom Styling
-st.markdown("""
-    <style>
-    .main-header { font-size: 2.2rem; font-weight: 700; color: #1E3A8A; }
-    .sub-header { font-size: 1.1rem; color: #4B5563; }
-    .metric-card { background-color: #F3F4F6; padding: 1rem; border-radius: 8px; }
-    </style>
-""", unsafe_allow_html=True)
+DEFAULT_API_URL = os.getenv("API_URL", "http://api:8000")
 
-st.markdown('<div class="main-header">⚡ Quick-Commerce SLA Risk Management Console</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-header">Real-time 30-Minute Delivery Breach Risk Prediction & Operational Dispatch System</div>', unsafe_allow_html=True)
-st.divider()
+st.title("⚡ Quick-Commerce SLA Risk Management System")
+st.markdown("Real-time Delivery Breach Risk Prediction & Dispatch Optimization Console")
 
-# Sidebar Config
-st.sidebar.title("🛠️ Microservice Config")
-api_base_url = st.sidebar.text_input("FastAPI Backend URL", value="http://localhost:8000")
+st.sidebar.header("Configuration")
+api_url = st.sidebar.text_input("API Base URL", value=DEFAULT_API_URL)
 
-# Check Health
-try:
-    health_resp = requests.get(f"{api_base_url}/health", timeout=3)
-    if health_resp.status_code == 200:
-        health_data = health_resp.json()
-        st.sidebar.success(f"🟢 API Online | Source: {health_data.get('model_source', 'S3')}")
-    else:
-        st.sidebar.error("🔴 API Unhealthy")
-except Exception:
-    st.sidebar.warning("⚠️ API Connection Offline. Ensure FastAPI service is running on port 8000.")
+tab1, tab2, tab3 = st.tabs(["🎯 Single Order Risk Predictor", "📦 Batch Dispatch Evaluator", "📊 System Health & Metrics"])
 
-tabs = st.tabs(["🚀 Single Order Risk Evaluator", "📦 Batch Order Dispatch Inspector", "📊 Model Performance Dashboard"])
-
-# TAB 1: Single Order
-with tabs[0]:
-    st.subheader("Evaluate Individual Delivery SLA Breach Risk")
+with tab1:
+    st.subheader("Single Delivery Order Parameters")
+    
     col1, col2, col3 = st.columns(3)
-
     with col1:
-        age = st.number_input("Rider Age", min_value=18, max_value=65, value=28)
-        ratings = st.slider("Rider Rating", min_value=1.0, max_value=5.0, value=4.7, step=0.1)
-        distance = st.number_input("Delivery Distance (km)", min_value=0.1, max_value=50.0, value=4.5, step=0.1)
-        multiple_deliveries = st.selectbox("Concurrent Deliveries Assigned", options=[0.0, 1.0, 2.0, 3.0], index=0)
-
+        age = st.number_input("Rider Age", min_value=18, max_value=60, value=28)
+        ratings = st.number_input("Rider Rating", min_value=1.0, max_value=5.0, value=4.5, step=0.1)
+        distance = st.number_input("Delivery Distance (km)", min_value=0.1, max_value=50.0, value=7.5, step=0.1)
+        weather = st.selectbox("Weather Condition", ["Sunny", "Stormy", "Sandstorms", "Windy", "Fog", "Cloudy"])
+    
     with col2:
-        weather = st.selectbox("Weather Conditions", options=["Sunny", "Stormy", "Sandstorms", "Windy", "Fog", "Cloudy"])
-        traffic = st.selectbox("Road Traffic Density", options=["Low", "Medium", "High", "Jam"])
-        vehicle_cond = st.selectbox("Vehicle Condition Index", options=[0, 1, 2], index=2)
-
+        traffic = st.selectbox("Road Traffic Density", ["Low", "Medium", "High", "Jam"])
+        vehicle_cond = st.selectbox("Vehicle Condition Code", [0, 1, 2])
+        order_type = st.selectbox("Order Type", ["Snack", "Meal", "Drinks", "Buffet"])
+        vehicle_type = st.selectbox("Vehicle Type", ["scooter", "motorcycle", "electric_scooter", "bicycle"])
+    
     with col3:
-        order_type = st.selectbox("Order Type", options=["Snack", "Meal", "Drinks", "Buffet"])
-        vehicle_type = st.selectbox("Vehicle Type", options=["motorcycle", "scooter", "electric_scooter", "bicycle"])
-        festival = st.selectbox("Festival Period", options=["No", "Yes"])
-        city = st.selectbox("City Category", options=["Metropolitian", "Urban", "Semi-Urban"])
-
-    if st.button("⚡ Evaluate Delivery SLA Risk", type="primary", use_container_width=True):
+        deliveries = st.number_input("Multiple Deliveries in Trip", min_value=0, max_value=5, value=1)
+        festival = st.selectbox("Festival Period?", ["No", "Yes"])
+        city = st.selectbox("City Zone Type", ["Metropolitian", "Urban", "Semi-Urban"])
+    
+    if st.button("Predict SLA Breach Risk", type="primary"):
         payload = {
-            "Delivery_person_Age": float(age),
-            "Delivery_person_Ratings": float(ratings),
-            "distance_km": float(distance),
+            "Delivery_person_Age": age,
+            "Delivery_person_Ratings": ratings,
+            "distance_km": distance,
             "Weatherconditions": weather,
             "Road_traffic_density": traffic,
-            "Vehicle_condition": int(vehicle_cond),
+            "Vehicle_condition": vehicle_cond,
             "Type_of_order": order_type,
             "Type_of_vehicle": vehicle_type,
-            "multiple_deliveries": float(multiple_deliveries),
+            "multiple_deliveries": deliveries,
             "Festival": festival,
-            "City": city,
+            "City": city
         }
-
+        
         try:
-            resp = requests.post(f"{api_base_url}/predict", json=payload, timeout=5)
+            resp = requests.post(f"{api_url}/predict", json=payload, timeout=5)
             if resp.status_code == 200:
                 result = resp.json()
-                st.divider()
-                
-                res_col1, res_col2, res_col3 = st.columns(3)
-                
-                risk_level = result["risk_level"]
-                proba = result["sla_breach_probability"] * 100
-                will_breach = result["will_breach_sla"]
-
-                if risk_level == "HIGH":
-                    res_col1.error(f"🚨 Risk Level: {risk_level}")
-                elif risk_level == "MEDIUM":
-                    res_col1.warning(f"⚠️ Risk Level: {risk_level}")
+                st.markdown("---")
+                if result["will_breach_sla"] == 1:
+                    st.error(f"⚠️ **HIGH SLA BREACH RISK DETECTED** (Probability: {result['sla_breach_probability']:.2%})")
                 else:
-                    res_col1.success(f"✅ Risk Level: {risk_level}")
-
-                res_col2.metric("SLA Breach Probability", f"{proba:.1f}%")
-                res_col3.metric("Predicted Status", "Breach (>30m)" if will_breach == 1 else "On-Time (≤30m)")
-
-                st.info(f"💡 **Operational Recommendation:** {result['recommendation']}")
+                    st.success(f"✅ **ON-TIME DELIVERY EXPECTED** (SLA Breach Risk: {result['sla_breach_probability']:.2%})")
+                
+                st.info(f"**Actionable Dispatch Recommendation:** {result['recommendation']}")
             else:
                 st.error(f"API Error {resp.status_code}: {resp.text}")
         except Exception as e:
             st.error(f"Failed to connect to API backend: {e}")
 
-# TAB 2: Batch Inspection
-with tabs[1]:
-    st.subheader("Batch Order Dispatch SLA Inspector")
-    st.write("Upload a CSV file containing multiple delivery orders to evaluate SLA breach risk in batch.")
+with tab2:
+    st.subheader("Batch Order Dispatch Evaluation")
+    st.markdown("Upload a CSV file containing multiple delivery orders for batch risk scoring.")
     
-    sample_csv = pd.DataFrame([{
-        "Delivery_person_Age": 28.0, "Delivery_person_Ratings": 4.7, "distance_km": 4.5,
-        "Weatherconditions": "Sunny", "Road_traffic_density": "Low", "Vehicle_condition": 2,
-        "Type_of_order": "Snack", "Type_of_vehicle": "motorcycle", "multiple_deliveries": 0.0,
-        "Festival": "No", "City": "Metropolitian"
-    }, {
-        "Delivery_person_Age": 22.0, "Delivery_person_Ratings": 3.8, "distance_km": 12.0,
-        "Weatherconditions": "Stormy", "Road_traffic_density": "Jam", "Vehicle_condition": 0,
-        "Type_of_order": "Meal", "Type_of_vehicle": "scooter", "multiple_deliveries": 2.0,
-        "Festival": "Yes", "City": "Metropolitian"
-    }])
-
-    st.download_button("📥 Download Sample Batch Template CSV", data=sample_csv.to_csv(index=False), file_name="batch_delivery_template.csv", mime="text/csv")
-
-    uploaded_file = st.file_uploader("Upload Batch CSV", type=["csv"])
+    uploaded_file = st.file_uploader("Choose CSV file", type=["csv"])
     if uploaded_file is not None:
-        batch_df = pd.read_csv(uploaded_file)
-        st.write("Uploaded Batch Preview:", batch_df.head())
-
-        if st.button("⚡ Run Batch SLA Inspection", type="primary"):
-            orders_payload = {"orders": batch_df.to_dict(orient="records")}
-            try:
-                resp = requests.post(f"{api_base_url}/predict/batch", json=orders_payload, timeout=10)
+        try:
+            df = pd.read_csv(uploaded_file)
+            st.write("Uploaded Orders Preview:", df.head())
+            
+            if st.button("Run Batch Prediction"):
+                orders = df.to_dict(orient="records")
+                resp = requests.post(f"{api_url}/predict/batch", json={"orders": orders}, timeout=15)
                 if resp.status_code == 200:
                     results = resp.json()
-                    res_df = pd.DataFrame(results)
-                    output_df = pd.concat([batch_df, res_df], axis=1)
-                    
-                    st.success(f"Batch evaluation complete! Inspected {len(output_df)} orders.")
-                    st.dataframe(output_df)
-                    st.download_button("📥 Download Results CSV", data=output_df.to_csv(index=False), file_name="sla_risk_batch_results.csv", mime="text/csv")
+                    res_df = pd.DataFrame(results["predictions"])
+                    st.success(f"Successfully processed {results['total_orders']} orders!")
+                    st.dataframe(res_df)
                 else:
-                    st.error(f"Batch API Error: {resp.text}")
-            except Exception as e:
-                st.error(f"Batch Connection Error: {e}")
+                    st.error(f"Batch Processing Error: {resp.text}")
+        except Exception as e:
+            st.error(f"CSV Processing Error: {e}")
 
-# TAB 3: Model Performance
-with tabs[2]:
-    st.subheader("Model Evaluation Summary & Benchmarks")
-    metrics_path = Path("metrics.json")
-    if metrics_path.exists():
-        with open(metrics_path, "r") as f:
-            metrics_data = json.load(f)
-        
-        st.write(f"🏆 **Champion Model:** `{metrics_data.get('best_model', 'LightGBM')}`")
-        st.write(f"📈 **Best ROC-AUC Score:** `{metrics_data.get('best_roc_auc', 0.0):.4f}`")
-
-        model_metrics = metrics_data.get("metrics_by_model", {})
-        df_metrics = pd.DataFrame(model_metrics).T
-        st.dataframe(df_metrics.style.highlight_max(axis=0, color="#D1FAE5"))
-    else:
-        st.info("No `metrics.json` file found. Run model training (`python -m src.train`) to populate statistics.")
+with tab3:
+    st.subheader("System Health & ML Model Status")
+    try:
+        health_resp = requests.get(f"{api_url}/health", timeout=3)
+        if health_resp.status_code == 200:
+            h_data = health_resp.json()
+            st.json(h_data)
+        else:
+            st.warning("Could not reach API health endpoint.")
+    except Exception as e:
+        st.error(f"API Connection Error: {e}")
