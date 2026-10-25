@@ -1,19 +1,37 @@
-from pydantic import BaseModel, Field
-from typing import Optional, List
+from pydantic import BaseModel, Field, ConfigDict
+from typing import List
 
 
 class DeliveryInput(BaseModel):
-    Delivery_person_Age: float = Field(..., example=28.0, description="Age of delivery rider")
-    Delivery_person_Ratings: float = Field(..., example=4.7, description="Rating of delivery rider (1.0 - 5.0)")
-    distance_km: float = Field(..., example=5.2, description="Haversine distance in km from restaurant to customer")
-    Weatherconditions: str = Field(..., example="Sunny", description="Weather condition (Sunny, Stormy, Sandstorms, Windy, Fog, Cloudy)")
-    Road_traffic_density: str = Field(..., example="Medium", description="Traffic level (Low, Medium, High, Jam)")
-    Vehicle_condition: int = Field(..., example=2, description="Vehicle condition index (0, 1, 2)")
-    Type_of_order: str = Field(..., example="Snack", description="Order category (Snack, Meal, Drinks, Buffet)")
-    Type_of_vehicle: str = Field(..., example="motorcycle", description="Vehicle type (motorcycle, scooter, electric_scooter, bicycle)")
-    multiple_deliveries: float = Field(..., example=0.0, description="Number of concurrent orders assigned")
-    Festival: str = Field(..., example="No", description="Festival period (No, Yes)")
-    City: str = Field(..., example="Metropolitian", description="City type (Metropolitian, Urban, Semi-Urban)")
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "Delivery_person_Age": 28.0,
+                "Delivery_person_Ratings": 4.7,
+                "distance_km": 5.2,
+                "Weatherconditions": "Sunny",
+                "Road_traffic_density": "Medium",
+                "Vehicle_condition": 2,
+                "Type_of_order": "Snack",
+                "Type_of_vehicle": "motorcycle",
+                "multiple_deliveries": 0.0,
+                "Festival": "No",
+                "City": "Metropolitian",
+            }
+        }
+    )
+
+    Delivery_person_Age: float = Field(..., description="Age of delivery rider")
+    Delivery_person_Ratings: float = Field(..., description="Rating of delivery rider (1.0 - 5.0)")
+    distance_km: float = Field(..., description="Haversine distance in km from restaurant to customer")
+    Weatherconditions: str = Field(..., description="Weather condition (Sunny, Stormy, Sandstorms, Windy, Fog, Cloudy)")
+    Road_traffic_density: str = Field(..., description="Traffic level (Low, Medium, High, Jam)")
+    Vehicle_condition: int = Field(..., description="Vehicle condition index (0, 1, 2)")
+    Type_of_order: str = Field(..., description="Order category (Snack, Meal, Drinks, Buffet)")
+    Type_of_vehicle: str = Field(..., description="Vehicle type (motorcycle, scooter, electric_scooter, bicycle)")
+    multiple_deliveries: float = Field(..., description="Number of concurrent orders assigned")
+    Festival: str = Field(..., description="Festival period (No, Yes)")
+    City: str = Field(..., description="City type (Metropolitian, Urban, Semi-Urban)")
 
 
 class PredictionOutput(BaseModel):
@@ -28,6 +46,8 @@ class BatchDeliveryInput(BaseModel):
 
 
 class HealthResponse(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+
     status: str
     model_loaded: bool
     model_source: str
