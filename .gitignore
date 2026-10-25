@@ -1,31 +1,34 @@
-# Python
-venv/
+# Byte-compiled / cache
 __pycache__/
 *.py[cod]
-*$py.class
-*.so
+*.egg-info/
 .pytest_cache/
-.coverage
-htmlcov/
 .ruff_cache/
 
-# Environment & Secrets
-.env
-*.pem
-kaggle.json
+# Virtual environment
+venv/
+.venv/
 
-# Data & ML Artifacts (managed by DVC)
+# Environment variables
+.env
+
+# Logs
+logs/*.log
+
+# Local MLflow tracking data
+mlruns/
+mlartifacts/
+
+# Data (tracked via DVC, not git)
+data/raw/*
+!data/raw/.gitignore
 data/processed/*
 !data/processed/.gitkeep
+
+# Models (tracked via DVC, not git)
 models/*
 !models/.gitkeep
-mlruns/
-metrics.json
+!models/*.dvc
 
-# IDE
-.vscode/
-.idea/
-*.swp
-
-# OS
+# OS files
 .DS_Store
